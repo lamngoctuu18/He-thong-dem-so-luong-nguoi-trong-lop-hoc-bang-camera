@@ -31,12 +31,16 @@
 **Phần cứng**
 - Camera Imou Ranger 2. 
 - Laptop
- 
+
+**Phần mềm**
+- Hệ điều hành, môi trường Python.
+- Các thư viện xử lý ảnh ( OpenCV, YOLOv8,...)
+
 ---
 ## **Yêu cầu hệ thống**  
 - **Python** 3.7 trở lên  
 - **MySQL Server**  
-- **OpenCV, MediaPipe, TensorFlow**  
+- **OpenCV, TensorFlow**  
 - Các thư viện Python cần thiết (**liệt kê trong `requirements.txt`**)  
 
 ---
@@ -45,190 +49,163 @@
 
 ### **1. Cài đặt các thư viện cần thiết**  
 Chạy lệnh sau để cài đặt các thư viện Python yêu cầu:  
-```sh
+```
 pip install -r requirements.txt
 ```
 
----
+### **2. Hướng dẫn thực hiện**  
+Sơ đồ cấu trúc:
+![image](https://github.com/user-attachments/assets/e37715da-e690-4a1f-960b-ea656e188acf)
+#### **2.1. Kiểm tra nguồn RTSP của camera (test/test_cam.py)**  
+Định dạng nguồn: 
+```
+rtsp://[username]:[password]@[Địa-chỉ-IP]:554/cam/realmonitor?channel=1&subtype=0
+```
+Ví dụ:
+```
+rtsp://admin:L2688A29@192.168.199.44:554/cam/realmonitor?channel=1&subtype=0
+```
+*Lưu ý:* Mặc định username của hầu hết camera là admin 
 
-### **2. Thiết lập cơ sở dữ liệu MySQL**  
-
-#### **2.1. Cài đặt MySQL Server**  
-- Cài đặt MySQL Server (nếu chưa có).  
-- Đảm bảo MySQL đang chạy trên hệ thống.  
-
-#### **2.2. Tạo cơ sở dữ liệu**  
-Mở MySQL và chạy lệnh sau để tạo cơ sở dữ liệu **`fitness_tracking`**:  
-```sql
-CREATE DATABASE fitness_tracking;
+#### **2.2. Tạo file config.yaml**
+1. Điền nguồn RTSP của camera sau khi test thành công
+```
+camera:Cấu hình cho mô hình YOLO dùng để phát hiện đối tượng
+  rtsp_url: "rtsp://admin:L2688A29@192.168.199.44:554/cam/realmonitor?channel=1&subtype=1"  # Updated camera source
+  frame_rate: 20   # Số khung hình xử lý mỗi giây
+  resolution: [480, 360]  # Increased resolution to improve frame size
+```
+2. Cấu hình cho mô hình YOLO dùng để phát hiện đối tượng
+```
+yolo:
+  model_path: "yolov8l.pt"         # Đường dẫn đến file mô hình YOLO (phiên bản yolov8l)
+  confidence_threshold: 0.5         # Ngưỡng độ tin cậy; chỉ các dự đoán có confidence >= 0.5 mới được chấp nhận
+  iou_threshold: 0.4                # Ngưỡng IoU (Intersection over Union) dùng trong non-max suppression để loại bỏ các dự đoán trùng lặp
+```
+3. Cấu hình cho bộ theo dõi (tracker) sử dụng thuật toán DeepSORT
+```
+tracker:
+  type: "DeepSORT"                # Loại bộ theo dõi được sử dụng (ở đây dùng DeepSORT)
+  max_age: 30                     # Số khung hình tối đa theo dõi trước khi cho rằng mục tiêu đã mất (số khung hình trống)
+  min_hits: 3                     # Số lần xác nhận liên tiếp cần có để xác nhận sự tồn tại của mục tiêu
+```
+4. Cấu hình cho mô hình LSTM dùng trong các tác vụ dự đoán chuỗi (sequence prediction)
+```
+lstm:
+  sequence_length: 10             # Độ dài chuỗi dữ liệu đầu vào cho LSTM (số bước thời gian)
+  epochs: 50                      # Số epoch huấn luyện cho mô hình LSTM
+  batch_size: 16                  # Số mẫu dữ liệu được xử lý cùng lúc trong một batch
+  learning_rate: 0.001            # Tốc độ học (learning rate) cho quá trình huấn luyện LSTM
+```
+5. Cấu hình đường dẫn tới dữ liệu và mô hình đã được huấn luyện
+```
+dataset:
+  image_folder: "data/images/"           # Thư mục chứa các ảnh đầu vào
+  label_folder: "data/labels/"             # Thư mục chứa các nhãn tương ứng của ảnh
+  trained_model_path: "data/trained_model.h5"  # Đường dẫn lưu file mô hình đã được huấn luyện (định dạng .h5)
+```
+6. Cấu hình kết nối đến cơ sở dữ liệu MySQL
+```
+  host: "localhost"               # Địa chỉ host của MySQL server (ở đây là localhost)
+  user: "root"                    # Tên người dùng để kết nối (user mặc định là root)
+  password: "your_password"      # Mật khẩu tương ứng cho user
+  database: "people_control"      # Tên cơ sở dữ liệu sẽ sử dụng
+```
+#### **2.3. Tạo cơ sở dữ liệu**  
+Mở MySQL và chạy lệnh sau để tạo cơ sở dữ liệu **`people_control`**
+```
+CREATE DATABASE people_control;
+USE people_control;
 ```
 
-#### **2.3. Tạo các bảng cần thiết**  
-Kết nối đến cơ sở dữ liệu **fitness_tracking** và tạo các bảng sau:  
-
-```sql
-USE fitness_tracking;
-
--- Bảng lưu thông tin người dùng nhận diện khuôn mặt
-CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    encoding BLOB NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Bảng lưu lịch sử nhận diện khuôn mặt
-CREATE TABLE IF NOT EXISTS face_recognition_logs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
-    recognized_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-);
--- Bảng lưu lịch sử bài tập gập bụng
-CREATE TABLE IF NOT EXISTS situp_sessions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
-    situp_count INT NOT NULL,
-    result TINYINT(1) NOT NULL,  -- 1 means "passed", 0 means "not passed"
-    session_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-);
-
+#### **2.4. Tạo các bảng cần thiết và kết nối với database (database.py)**  
+```
+def create_table_if_not_exists(cursor):
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS entry_exit_log (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        timestamp DATETIME,
+        event VARCHAR(10),
+        count_change INT
+    )
+    """)
+```
+Kết nối database bằng cú pháp:
+```
+python database.py
 ```
 
-#### **2.4. Cấu hình kết nối MySQL trong `app.py`**  
-Mở file **`app.py`** và cập nhật thông tin kết nối MySQL:  
-```python
-DB_CONFIG = {
-    "host": "localhost",
-    "user": "root",
-    "password": "your_password",
-    "database": "fitness_tracking"
-}
+#### **2.5. Tự động lưu file CSV và MySQL (app.py)**  
+Tự động lưu và CSV:
 ```
-🔹 **Lưu ý:** Thay `your_password` bằng mật khẩu MySQL của bạn.  
-
----
-
-### **3. Thu thập dữ liệu khuôn mặt**  
-Chạy script **`face_data_collector.py`** để thu thập dữ liệu khuôn mặt:  
-```sh
-python face_data_collector.py
-```
-Hoặc có thể sử dụng API Flask để thu thập dữ liệu khuôn mặt:  
-```sh
-curl -X POST http://localhost:5000/collect_face_data -H "Content-Type: application/json" -d '{"name": "TênCủaBạn"}'
+ try:
+                with open('data/current_people_count.csv', 'a') as f:
+                    f.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')},{current_people_count}\n")
+            except PermissionError as e:
+                print(f"❌ Lỗi khi lưu dữ liệu vào CSV: {e}")
 ```
 
----
-
-### **4. Huấn luyện mô hình nhận diện khuôn mặt**  
-Sau khi thu thập ảnh khuôn mặt, chạy script **`train_model_face.py`** để huấn luyện mô hình nhận diện:  
-```sh
-python train_model_face.py
 ```
-🔹 Mô hình sau khi huấn luyện sẽ được lưu vào **`face_model.pkl`**.  
-
----
-
-### **5. Chuẩn bị video làm dataset**  
-#### **5.1. Thu thập video gập bụng**  
-- Ghi lại các video gập bụng từ 2 góc chính là góc **45 độ** và **góc ngang**.  
-- Độ phân giải tối thiểu **720p**, tốc độ khung hình **30 FPS**.  
-- Mỗi video có thể kéo dài **15-60 giây**.  
-
-| Góc ngang | Góc 45 độ |
-|-----------|----------|
-| ![Góc ngang](https://github.com/user-attachments/assets/515fe7ab-f236-494f-bfea-17c7f2130e5f) | ![Góc 45 độ](https://github.com/user-attachments/assets/8281e8f0-6762-4425-a10e-ac1cea4146c5) |
-
-
-#### **5.2. Lưu video vào thư mục dataset**  
-- Tạo thư mục **`dataset/videos`**.  
-- Lưu các video vào thư mục này.  
-- Định dạng video khuyến nghị: `.mp4` hoặc `.avi`.  
-
----
-
-### **6. Trích xuất Keypoints từ video**  
-Chạy script **`frame.py`** để trích xuất keypoints từ video tập luyện:  
-```sh
-python frame.py
+try:
+                df_log = pd.DataFrame(entry_exit_log, columns=["timestamp", "event", "count_change"])
+                df_log.to_csv('C:/Project_Structure/data/entry_exit_log.csv', index=False)
+                print("📊 Dữ liệu đã được lưu vào 'C:/Project_Structure/data/entry_exit_log.csv'")
+            except PermissionError as e:
+                print(f"❌ Lỗi khi lưu dữ liệu vào CSV: {e}")
 ```
-🔹 Hệ thống sử dụng **MediaPipe/OpenPose** để trích xuất keypoints từ video.  
-
----
-
-### **7. Chuẩn bị dữ liệu keypoints**  
-Chạy script **`keypoints.py`** để xử lý dữ liệu keypoints trước khi đưa vào mô hình LSTM:  
-```sh
-python keypoints.py
+Tự động lưu vào MySQL:
 ```
-🔹 Dữ liệu đầu ra sẽ là chuỗi thời gian (**time series**) dùng để huấn luyện mô hình LSTM.  
+for log in entry_exit_log:
+                cursor.execute("INSERT INTO entry_exit_log (timestamp, event, count_change) VALUES (%s, %s, %s)", log)
+            db.commit()
+            print("📊 Dữ liệu đã được lưu vào MySQL")
 
----
-
-### **8. Huấn luyện mô hình LSTM**  
-Mở và chạy notebook **`train_lstm.ipynb`** để huấn luyện mô hình LSTM nhận diện số lần gập bụng.  
-Sau khi huấn luyện, mô hình sẽ được lưu dưới dạng:  
 ```
-Model_situp_lstm.h5
+#### **2.6. Tiến hành train mô hình** 
+**Bước 1: Chuyền dataset đã thu thập được vào Folder (images)**
+
+![image](https://github.com/user-attachments/assets/3b2c0942-6012-479d-be58-23cf56b69820)
+
+Các link dataset:
+- [CrowdHuman Crowd Detection CSV Labels](https://www.kaggle.com/datasets/permanalwep/crowd-human-csv-labels)
+- [CrowdHuman Crowd Detection](https://www.kaggle.com/datasets/permanalwep/crowdhuman-crowd-detection)
+- [CrowdHuman Face](https://www.kaggle.com/datasets/permanalwep/crowdhuman-face)
+
+**Bước 2: Tiến hành tự động gán nhãn bằng mô hình yolov8 (auto_labeling.py)**
+
+![image](https://github.com/user-attachments/assets/1f31a6d2-e086-43c7-aec7-f424de74a345)
+
 ```
+python auto_labeling.py
+```
+**Bước 3: Kiểm tra sau khi tự động gán nhãn (labels/)**
 
----
+![image](https://github.com/user-attachments/assets/22653595-baa2-4564-98da-f4c9cefdcd7b)
 
-### **9. Chạy ứng dụng**  
-Chạy Flask API để khởi động hệ thống:  
-```sh
+Có file .txt là đúng
+
+**Bước 4: Bắt đầu train (models/train_lstm.py)**
+```
+python train_lstm.py
+```
+Kết quả sau khi train tốt nhất sẽ được lưu vào file **`trained_model.h5`**
+![image](https://github.com/user-attachments/assets/c604b999-7b20-478b-907c-a9f710aa6b08)
+
+#### **2.7. Chạy toàn bộ mô hình sau khi train xong (app.py)** 
+```
 python app.py
 ```
-Sau khi chạy, mở trình duyệt và truy cập:  
-```
-http://localhost:5000
-```
-🔹 **Giao diện chính của ứng dụng sẽ hiển thị tại đây.**  
-
----
-
 ## **Các API Endpoint**  
 | Endpoint                 | Phương thức | Mô tả |
 |--------------------------|------------|-------|
-| `/`                      | GET        | Trang chính |
-| `/video_feed`            | GET        | Luồng video từ camera |
-| `/confirm`               | POST       | Xác nhận người dùng |
-| `/start_counting`        | POST       | Bắt đầu đếm số lần gập bụng |
-| `/continue_set`          | POST       | Tiếp tục sang set tập mới |
-| `/change_user`           | POST       | Đổi người dùng |
-| `/save`                  | POST       | Lưu số lần gập bụng vào database |
-| `/status`                | GET        | Lấy trạng thái hiện tại |
-| `/pause`                 | POST       | Tạm dừng đếm |
-| `/resume`                | POST       | Tiếp tục đếm sau khi tạm dừng |
-| `/logout`                | POST       | Đăng xuất người dùng |
-| `/user_history`          | GET        | Xem lịch sử tập luyện của người dùng |
-
+| `/`                      | GET        | Trả về trang giao diện chính của ứng dụng (index.html), hiển thị giao diện web cho người dùng. |
+| `/video_feed`            | GET        | Cung cấp stream video real-time dưới dạng JPEG từ hàm **`generate_frames()`**, cho phép hiển thị video trực tuyến trong trình duyệt. |
+| `/start`               | POST       | Khởi động kết nối camera với RTSP URL được truyền qua request (tham số **`rtsp_url`**).|
+| `/stop`        | POST       | Dừng kết nối camera và giải phóng các tài nguyên liên quan. |
+| `/announce`          | POST       | Kích hoạt thông báo giọng nói (voice notification) để công bố số lượng người hiện tại. |
 ---
 
-## **Ghi chú quan trọng**  
-✅ **Kiểm tra webcam**: Đảm bảo webcam đang hoạt động trước khi chạy hệ thống.  
-✅ **Chạy MySQL Server**: Hệ thống cần MySQL để lưu dữ liệu tập luyện.  
-✅ **Điều chỉnh tham số**: Có thể thay đổi **thời gian chờ** và các tham số khác trong `app.py` để phù hợp với yêu cầu thực tế.  
+## **Ghi chú: **  
+✅ Hãy kết hợp cả CPU+GPU để camera hoạt động tốt hơn. 
 
 ---
-
-## **Mô hình tổng quan của hệ thống**  
-1️⃣ **Nhận diện người tập luyện** (📷 **Camera**)  
-   - **Face Recognition** để xác thực người dùng  
-   - Nếu xác thực thành công → Tiếp tục sang bước đếm số lần gập bụng  
-   - Nếu thất bại → Cho đếm số lần gập bụng nhưng không lưu vào cơ sở dữ liệu kết quả 
-
-2️⃣ **Nhận diện động tác gập bụng**  
-   - Trích xuất **keypoints** từ video bằng **MediaPipe/OpenPose**  
-   - Ghép thành dữ liệu chuỗi thời gian (**time series**)  
-   - Đưa vào mô hình **LSTM** để đếm số lần gập bụng  
-
-3️⃣ **Lưu kết quả vào MySQL**  
-   - Lưu thông tin người tập, số lần gập bụng, thời gian tập luyện  
-   - Hiển thị lịch sử tập luyện khi cần  
-
----
-
-**🔥 Chúc bạn triển khai thành công dự án SitUpFaceLogin! 🔥** 🚀
