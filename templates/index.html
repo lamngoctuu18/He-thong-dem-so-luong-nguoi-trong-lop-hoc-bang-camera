@@ -1,0 +1,56 @@
+<!-- filepath: c:\Project_Structure\templates\index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Monitoring</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .container {
+            margin-top: 50px;
+        }
+        .video-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .video-container img {
+            border: 2px solid #dee2e6;
+            border-radius: 5px;
+        }
+        .button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center">Real-Time Monitoring</h1>
+        <form action="/start" method="post" class="form-inline justify-content-center">
+            <div class="form-group mb-2">
+                <label for="rtsp_url" class="sr-only">RTSP URL:</label>
+                <input type="text" class="form-control" id="rtsp_url" name="rtsp_url" placeholder="Enter RTSP URL" required>
+            </div>
+            <button type="submit" class="btn btn-primary mb-2 ml-2">Start Camera</button>
+        </form>
+        <div class="video-container">
+            <img src="{{ url_for('video_feed') }}" width="640" height="480" class="img-fluid">
+        </div>
+        <div class="button-container">
+            <form action="/announce" method="post">
+                <button type="submit" class="btn btn-info mb-2">Announce People Count</button>
+            </form>
+            <form action="/stop" method="post">
+                <button type="submit" class="btn btn-danger mb-2">Stop Camera</button>
+            </form>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

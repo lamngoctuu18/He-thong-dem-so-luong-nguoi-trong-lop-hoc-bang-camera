@@ -1,0 +1,8 @@
+ultralytics  # YOLOv8
+opencv-python  # Xử lý ảnh
+numpy  # Xử lý dữ liệu số
+pandas  # Xử lý dữ liệu dạng bảng
+scikit-learn  # Tiền xử lý dữ liệu
+tensorflow  # Train mô hình LSTM
+deep_sort_realtime  # Theo dõi đối tượng
+PyYAML  # Đọc file config.yaml
