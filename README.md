@@ -205,7 +205,7 @@ python app.py
 | `/announce`          | POST       | Kích hoạt thông báo giọng nói (voice notification) để công bố số lượng người hiện tại. |
 ---
 
-## **Ghi chú: **  
+## **Ghi chú:**  
 ✅ Hãy kết hợp cả CPU+GPU để camera hoạt động tốt hơn. 
 
 ---
