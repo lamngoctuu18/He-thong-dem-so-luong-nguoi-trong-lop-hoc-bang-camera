@@ -1,8 +1,8 @@
 <h1 align="center">HỆ THỐNG ĐẾM SỐ LƯỢNG NGƯỜI TRONG LỚP HỌC BẰNG CAMERA </h1>
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/e5a919d1-d081-4d12-819e-5fb18ce91a68 width="200"/>
-  <img src="https://github.com/user-attachments/assets/59dec55d-7825-422f-b80c-ac6915e3775a width="170"/>
+  <img src="https://github.com/user-attachments/assets/e5a919d1-d081-4d12-819e-5fb18ce91a68" width="200"/>
+  <img src="https://github.com/user-attachments/assets/59dec55d-7825-422f-b80c-ac6915e3775a" width="170"/>
 </p>
 <p align="center">
   <a href="https://www.facebook.com/DNUAIoTLab">
