@@ -1,5 +1,15 @@
-# **Hệ thống Đếm Số Lượng Người bằng Camera**  
+<h1 align="center">HỆ THỐNG ĐẾM SỐ LƯỢNG NGƯỜI TRONG LỚP HỌC BẰNG CAMERA </h1>
 
+<div align="center">
+
+![image](https://github.com/user-attachments/assets/53aad2f2-06de-4588-8fd8-f33d2b41c448)
+![image](https://github.com/user-attachments/assets/91e0ca53-7498-4fe2-a738-6f831b2792ff)
+
+[![Made by AIoTLab](https://img.shields.io/badge/Made%20by%20AIoTLab-blue?style=for-the-badge)](https://www.facebook.com/DNUAIoTLab)
+[![Fit DNU](https://img.shields.io/badge/Fit%20DNU-green?style=for-the-badge)](https://fitdnu.net/)
+[![DaiNam University](https://img.shields.io/badge/DaiNam%20University-red?style=for-the-badge)](https://dainam.edu.vn)
+
+</div>
 ## **Giới thiệu**  
 **Hệ thống Đếm Số Lượng Người bằng Camera sử dụng trí tuệ nhân tạo (AI)** để phát hiện và đếm số lượng người ra vào thông qua luồng video trực tiếp. Hệ thống phù hợp cho các ứng dụng giám sát như:
 
@@ -209,3 +219,8 @@ python app.py
 ✅ Hãy kết hợp cả CPU+GPU để camera hoạt động tốt hơn. 
 
 ---
+**Poster**
+
+![Poster_Nhom9_CNTT_1601 -_1_](https://github.com/user-attachments/assets/41c750e6-52ae-4d4c-b525-262805ef826d)
+
+
