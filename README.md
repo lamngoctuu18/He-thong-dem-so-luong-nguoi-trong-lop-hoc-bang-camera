@@ -1,15 +1,22 @@
 <h1 align="center">HỆ THỐNG ĐẾM SỐ LƯỢNG NGƯỜI TRONG LỚP HỌC BẰNG CAMERA </h1>
 
-<div align="center">
-
-<img src="https://github.com/user-attachments/assets/a7ad8c17-5216-4f9c-9bc5-715bfdc7283a" width="200px">
-<img src="https://github.com/user-attachments/assets/d057713b-9362-4a1e-9423-89691f3ab44d" width="200px">
-
-[![Made by AIoTLab](https://img.shields.io/badge/Made%20by%20AIoTLab-blue?style=for-the-badge)](https://www.facebook.com/DNUAIoTLab)
-[![Fit DNU](https://img.shields.io/badge/Fit%20DNU-green?style=for-the-badge)](https://fitdnu.net/)
-[![DaiNam University](https://img.shields.io/badge/DaiNam%20University-red?style=for-the-badge)](https://dainam.edu.vn)
-
-</div>
+<p align="center">
+  <img src="!(https://github.com/user-attachments/assets/e5a919d1-d081-4d12-819e-5fb18ce91a68)
+" alt="DaiNam University Logo" width="200"/>
+  <img src="!(https://github.com/user-attachments/assets/59dec55d-7825-422f-b80c-ac6915e3775a)
+" alt="AIoTLab Logo" width="170"/>
+</p>
+<p align="center">
+  <a href="https://www.facebook.com/DNUAIoTLab">
+    <img src="https://img.shields.io/badge/Made%20by%20AIoTLab-blue?style=for-the-badge" alt="Made by AIoTLab"/>
+  </a>
+  <a href="https://fitdnu.net/">
+    <img src="https://img.shields.io/badge/Fit%20DNU-green?style=for-the-badge" alt="Fit DNU"/>
+  </a>
+  <a href="https://dainam.edu.vn">
+    <img src="https://img.shields.io/badge/DaiNam%20University-red?style=for-the-badge" alt="DaiNam University"/>
+  </a>
+</p>
 
 ## **Giới thiệu**  
 **Hệ thống Đếm Số Lượng Người bằng Camera sử dụng trí tuệ nhân tạo (AI)** để phát hiện và đếm số lượng người ra vào thông qua luồng video trực tiếp. Hệ thống phù hợp cho các ứng dụng giám sát như:
