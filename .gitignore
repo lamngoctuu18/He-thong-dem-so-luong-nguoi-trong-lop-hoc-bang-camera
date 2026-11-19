@@ -1,0 +1,29 @@
+# Python cache & virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Environment variables & secrets
+.env
+
+# Runtime temporary & generated data
+data/.mplconfig/
+data/.ultralytics/
+data/runs/
+data/yolo_runs/
+data/entry_exit_log.csv
+data/*.mp4
+data/test_10_results/
+data/video_snapshots/
+
+# Pre-trained heavy model weights
+*.pt
+
+# Large datasets & presentation files
+images2/
+labels.zip
+*.pptx
+*.pdf

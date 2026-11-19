@@ -1,8 +1,9 @@
-ultralytics  # YOLOv8
-opencv-python  # Xử lý ảnh
-numpy  # Xử lý dữ liệu số
-pandas  # Xử lý dữ liệu dạng bảng
-scikit-learn  # Tiền xử lý dữ liệu
-tensorflow  # Train mô hình LSTM
-deep_sort_realtime  # Theo dõi đối tượng
-PyYAML  # Đọc file config.yaml
+ultralytics  # YOLOv8 nhận diện người
+opencv-python  # Xử lý hình ảnh và luồng video
+numpy  # Xử lý mảng số học
+pandas  # Xử lý và xuất dữ liệu CSV
+deep_sort_realtime  # Theo dõi đối tượng (DeepSORT)
+PyYAML  # Đọc file cấu hình config.yaml
+flask  # Web framework & API backend
+mysql-connector-python  # Kết nối cơ sở dữ liệu MySQL
+pyttsx3  # Thông báo giọng nói (Text-to-Speech)

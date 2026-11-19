@@ -1,28 +1,31 @@
 camera:
-  rtsp_url: "rtsp://admin:L2688A29@192.168.199.44:554/cam/realmonitor?channel=1&subtype=1"  # Updated camera source
-  frame_rate: 20   # Số khung hình xử lý mỗi giây
-  resolution: [480, 360]  # Increased resolution to improve frame size
+  rtsp_url: "0"    # Dùng "0" cho Camera Laptop (Webcam). Nguồn RTSP cũ: "rtsp://admin:L2688A29@192.168.199.44:554/cam/realmonitor?channel=1&subtype=1"
+  frame_rate: 20   # Số khung hình đọc mỗi giây
+  frame_skip: 2    # Xử lý AI mỗi N khung hình
+  resolution: [640, 480]  # Độ phân giải chuẩn 4:3 cho Webcam Laptop
 
 yolo:
   model_path: "yolov8l.pt"
-  confidence_threshold: 0.5
-  iou_threshold: 0.4
+  confidence_threshold: 0.25  # Hạ ngưỡng xuống 0.25 để bắt được người ở xa hoặc bị che khuất một phần (sau bàn ghế/lan can)
+  iou_threshold: 0.65         # Tăng ngưỡng NMS IoU lên 0.65 để không xóa nhầm người đứng/ngồi sát cạnh nhau
+  imgsz: 640                  # Độ phân giải suy luận cân bằng giữa tốc độ thời gian thực và độ chính xác
+  min_box_area: 50            # Cho phép nhận diện cả người ở khoảng cách xa
+  max_box_area_ratio: 0.80    # Ngưỡng diện tích tối đa
+  min_aspect_ratio: 0.15      # Tỉ lệ Rộng/Cao tối thiểu
+  max_aspect_ratio: 2.5       # Tỉ lệ Rộng/Cao tối đa
 
 tracker:
   type: "DeepSORT"
-  max_age: 30  # Số khung hình theo dõi trước khi mất mục tiêu
-  min_hits: 3
-
-lstm:
-  sequence_length: 10
-  epochs: 50
-  batch_size: 16
-  learning_rate: 0.001
+  max_age: 30               # Số khung hình theo dõi tối đa trước khi xóa mục tiêu mất dấu
+  min_hits: 3               # Số lần phát hiện liên tiếp để xác nhận 1 người
+  max_cosine_distance: 0.3  # Ngưỡng tương đồng ngoại hình để không trượt sang đồ vật tĩnh
+  smoothing_window: 5       # Số khung hình lấy trung vị (median) để chống nhiễu khi đếm ra/vào
 
 dataset:
   image_folder: "data/images/"
   label_folder: "data/labels/"
-  trained_model_path: "data/trained_model.h5"
+  current_count_csv: "data/current_people_count.csv"
+  entry_exit_csv: "data/entry_exit_log.csv"
 
 mysql:
   host: "localhost"

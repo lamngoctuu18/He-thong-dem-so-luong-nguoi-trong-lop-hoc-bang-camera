@@ -1,56 +1,375 @@
-<!-- filepath: c:\Project_Structure\templates\index.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real-Time Monitoring</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>Hệ Thống Đếm Số Lượng Người Trong Lớp Học</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         body {
-            background-color: #f8f9fa;
+            background-color: #0f172a;
+            color: #e2e8f0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
         }
-        .container {
-            margin-top: 50px;
+        .navbar-custom {
+            background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%);
+            border-bottom: 1px solid #334155;
         }
-        .video-container {
-            text-align: center;
-            margin-top: 20px;
+        .card-dark {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            color: #f8fafc;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
         }
-        .video-container img {
-            border: 2px solid #dee2e6;
-            border-radius: 5px;
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            line-height: 1.1;
         }
-        .button-container {
-            text-align: center;
-            margin-top: 20px;
+        .stat-label {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .video-wrapper {
+            background-color: #090d16;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 360px;
+        }
+        .video-wrapper img {
+            width: 100%;
+            max-width: 720px;
+            height: auto;
+            display: block;
+        }
+        .form-control-dark {
+            background-color: #0f172a;
+            border: 1px solid #475569;
+            color: #f8fafc;
+        }
+        .form-control-dark:focus {
+            background-color: #0f172a;
+            border-color: #38bdf8;
+            color: #ffffff;
+            box-shadow: 0 0 0 0.2rem rgba(56, 189, 248, 0.25);
+        }
+        .table-dark-custom {
+            --bs-table-bg: transparent;
+            --bs-table-color: #e2e8f0;
+            --bs-table-border-color: #334155;
+        }
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        .dot-online {
+            background-color: #22c55e;
+            box-shadow: 0 0 8px #22c55e;
+        }
+        .dot-offline {
+            background-color: #ef4444;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1 class="text-center">Real-Time Monitoring</h1>
-        <form action="/start" method="post" class="form-inline justify-content-center">
-            <div class="form-group mb-2">
-                <label for="rtsp_url" class="sr-only">RTSP URL:</label>
-                <input type="text" class="form-control" id="rtsp_url" name="rtsp_url" placeholder="Enter RTSP URL" required>
+    <nav class="navbar navbar-dark navbar-custom py-3 mb-4">
+        <div class="container">
+            <span class="navbar-brand mb-0 h4 fw-bold">
+                🎥 Hệ Thống Giám Sát & Đếm Số Người Trong Lớp Học (YOLOv8 + DeepSORT)
+            </span>
+            <div class="d-flex align-items-center">
+                <span id="camStatusBadge" class="badge bg-secondary px-3 py-2">
+                    <span id="camStatusDot" class="status-dot dot-offline"></span>
+                    <span id="camStatusText">Camera Offline</span>
+                </span>
             </div>
-            <button type="submit" class="btn btn-primary mb-2 ml-2">Start Camera</button>
-        </form>
-        <div class="video-container">
-            <img src="{{ url_for('video_feed') }}" width="640" height="480" class="img-fluid">
         </div>
-        <div class="button-container">
-            <form action="/announce" method="post">
-                <button type="submit" class="btn btn-info mb-2">Announce People Count</button>
+    </nav>
+
+    <div class="container pb-5">
+        <!-- Thông báo trạng thái thao tác -->
+        <div id="alertBox" class="alert d-none mb-3" role="alert"></div>
+
+        <!-- 4 Thẻ thống kê KPI thời gian thực -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="card card-dark p-3 h-100">
+                    <div class="stat-label mb-1">Số người hiện tại</div>
+                    <div id="statCurrentCount" class="stat-value text-info">0</div>
+                    <small class="text-secondary mt-1">Đã lọc nhiễu DeepSORT</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card card-dark p-3 h-100">
+                    <div class="stat-label mb-1">Tổng lượt Vào</div>
+                    <div id="statEntries" class="stat-value text-success">0</div>
+                    <small class="text-secondary mt-1">Tích lũy trong phiên</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card card-dark p-3 h-100">
+                    <div class="stat-label mb-1">Tổng lượt Ra</div>
+                    <div id="statExits" class="stat-value text-warning">0</div>
+                    <small class="text-secondary mt-1">Tích lũy trong phiên</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card card-dark p-3 h-100">
+                    <div class="stat-label mb-1">Tốc độ xử lý AI</div>
+                    <div class="stat-value text-light">
+                        <span id="statFps">0.0</span> <span class="fs-5 text-secondary">FPS</span>
+                    </div>
+                    <small class="text-secondary mt-1">YOLOv8 + DeepSORT</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thanh điều khiển Camera -->
+        <div class="card card-dark p-3 mb-4">
+            <form id="cameraForm" class="row g-2 align-items-center" onsubmit="handleStartCamera(event)">
+                <div class="col-12 col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text bg-dark text-light border-secondary">Nguồn Camera</span>
+                        <input
+                            type="text"
+                            class="form-control form-control-dark"
+                            id="rtsp_url"
+                            name="rtsp_url"
+                            value="{{ default_rtsp_url or '' }}"
+                            placeholder="Nhập RTSP URL hoặc 0 để dùng Webcam"
+                        >
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 d-flex flex-wrap gap-2 justify-content-md-end">
+                    <button type="submit" id="btnStart" class="btn btn-primary fw-semibold">
+                        ▶ Bắt đầu Camera
+                    </button>
+                    <button type="button" id="btnUseWebcam" class="btn btn-outline-light" onclick="useWebcam()">
+                        💻 Dùng Webcam (0)
+                    </button>
+                    <button type="button" id="btnAnnounce" class="btn btn-info text-dark fw-semibold" onclick="handleAnnounce()">
+                        🔊 Đọc số người
+                    </button>
+                    <button type="button" id="btnStop" class="btn btn-danger fw-semibold" onclick="handleStopCamera()">
+                        ⏹ Dừng Camera
+                    </button>
+                </div>
             </form>
-            <form action="/stop" method="post">
-                <button type="submit" class="btn btn-danger mb-2">Stop Camera</button>
-            </form>
+        </div>
+
+        <!-- Luồng Video & Biểu đồ / Nhật ký -->
+        <div class="row g-4">
+            <div class="col-12 col-lg-7">
+                <div class="card card-dark p-3 h-100">
+                    <h6 class="fw-bold mb-3 text-info">Luồng Video Giám Sát Thời Gian Thực</h6>
+                    <div class="video-wrapper">
+                        <img id="videoStream" src="{{ url_for('video_feed') }}" alt="Real-Time Video Stream">
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-5 d-flex flex-column gap-4">
+                <div class="card card-dark p-3">
+                    <h6 class="fw-bold mb-2 text-info">Biểu Đồ Biến Động Sĩ Số Theo Thời Gian Thực</h6>
+                    <canvas id="peopleChart" height="155"></canvas>
+                </div>
+
+                <div class="card card-dark p-3 flex-grow-1">
+                    <h6 class="fw-bold mb-2 text-info">Nhật Ký Vào / Ra Gần Nhất</h6>
+                    <div class="table-responsive" style="max-height: 190px; overflow-y: auto;">
+                        <table class="table table-sm table-dark-custom mb-0">
+                            <thead>
+                                <tr class="text-secondary">
+                                    <th>Thời gian</th>
+                                    <th>Sự kiện</th>
+                                    <th>Thay đổi</th>
+                                    <th>Sĩ số</th>
+                                </tr>
+                            </thead>
+                            <tbody id="eventLogBody">
+                                <tr>
+                                    <td colspan="4" class="text-center text-secondary py-3">Chưa có sự kiện Vào/Ra</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        function showAlert(message, type = 'info') {
+            const box = document.getElementById('alertBox');
+            box.className = `alert alert-${type} mb-3`;
+            box.textContent = message;
+            setTimeout(() => {
+                box.classList.add('d-none');
+            }, 4500);
+        }
+
+        function useWebcam() {
+            document.getElementById('rtsp_url').value = '0';
+            showAlert('Đã chọn nguồn Webcam (0). Nhấn "Bắt đầu Camera" để kết nối.', 'info');
+        }
+
+        async function handleStartCamera(e) {
+            e.preventDefault();
+            const rtspUrl = document.getElementById('rtsp_url').value.trim();
+            const btn = document.getElementById('btnStart');
+            btn.disabled = true;
+            btn.textContent = '⏳ Đang kết nối...';
+
+            try {
+                const formData = new FormData();
+                formData.append('rtsp_url', rtspUrl);
+                const res = await fetch('/start', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (res.ok) {
+                    showAlert(data.message || 'Đã bật camera thành công!', 'success');
+                } else {
+                    showAlert(data.message || 'Không thể kết nối camera.', 'danger');
+                }
+            } catch (err) {
+                showAlert('Lỗi kết nối tới máy chủ: ' + err.message, 'danger');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '▶ Bắt đầu Camera';
+                pollStatus();
+            }
+        }
+
+        async function handleStopCamera() {
+            try {
+                const res = await fetch('/stop', { method: 'POST' });
+                const data = await res.json();
+                showAlert(data.message || 'Đã dừng camera.', 'warning');
+                pollStatus();
+            } catch (err) {
+                showAlert('Lỗi khi dừng camera: ' + err.message, 'danger');
+            }
+        }
+
+        async function handleAnnounce() {
+            try {
+                const res = await fetch('/announce', { method: 'POST' });
+                const data = await res.json();
+                const text = data.message || `Hiện tại có ${data.count || 0} người có mặt trong lớp học.`;
+                showAlert('🔊 ' + text, 'info');
+
+                // Phát giọng nói trực tiếp trên trình duyệt của người dùng (nếu hỗ trợ)
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'vi-VN';
+                    window.speechSynthesis.speak(utterance);
+                }
+            } catch (err) {
+                showAlert('Lỗi khi phát thông báo: ' + err.message, 'danger');
+            }
+        }
+
+        // Khởi tạo biểu đồ Chart.js
+        const ctx = document.getElementById('peopleChart').getContext('2d');
+        const chartLabels = [];
+        const actualSeries = [];
+
+        const peopleChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartLabels,
+                datasets: [
+                    {
+                        label: 'Số người trong lớp',
+                        data: actualSeries,
+                        borderColor: '#38bdf8',
+                        backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                        tension: 0.3,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                animation: false,
+                scales: {
+                    x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
+                    y: { beginAtZero: true, ticks: { color: '#94a3b8', precision: 0 }, grid: { color: '#334155' } }
+                },
+                plugins: {
+                    legend: { labels: { color: '#e2e8f0' } }
+                }
+            }
+        });
+
+        async function pollStatus() {
+            try {
+                const res = await fetch('/status');
+                if (!res.ok) return;
+                const data = await res.json();
+
+                document.getElementById('statCurrentCount').textContent = data.current_people_count ?? 0;
+                document.getElementById('statEntries').textContent = data.total_entries ?? 0;
+                document.getElementById('statExits').textContent = data.total_exits ?? 0;
+                document.getElementById('statFps').textContent = (data.fps ?? 0).toFixed(1);
+
+                const dot = document.getElementById('camStatusDot');
+                const txt = document.getElementById('camStatusText');
+                if (data.camera_active) {
+                    dot.className = 'status-dot dot-online';
+                    txt.textContent = 'Camera Online';
+                } else {
+                    dot.className = 'status-dot dot-offline';
+                    txt.textContent = 'Camera Offline';
+                }
+
+                // Cập nhật biểu đồ khi camera đang chạy
+                if (data.camera_active) {
+                    const nowStr = new Date().toLocaleTimeString('vi-VN');
+                    chartLabels.push(nowStr);
+                    actualSeries.push(data.current_people_count ?? 0);
+                    if (chartLabels.length > 20) {
+                        chartLabels.shift();
+                        actualSeries.shift();
+                    }
+                    peopleChart.update();
+                }
+
+                // Cập nhật bảng nhật ký Vào / Ra
+                const tbody = document.getElementById('eventLogBody');
+                if (data.recent_events && data.recent_events.length > 0) {
+                    tbody.innerHTML = data.recent_events.map(ev => {
+                        const isEntry = ev.event === 'entry';
+                        const badge = isEntry
+                            ? '<span class="badge bg-success">Vào</span>'
+                            : '<span class="badge bg-warning text-dark">Ra</span>';
+                        const sign = isEntry ? '+' : '-';
+                        return `<tr>
+                            <td class="text-secondary">${ev.timestamp.split(' ')[1] || ev.timestamp}</td>
+                            <td>${badge}</td>
+                            <td class="fw-bold">${sign}${ev.count_change}</td>
+                            <td>${ev.total_after ?? '--'}</td>
+                        </tr>`;
+                    }).join('');
+                }
+            } catch (err) {
+                // Bỏ qua lỗi mạng tạm thời khi polling
+            }
+        }
+
+        setInterval(pollStatus, 1500);
+        pollStatus();
+    </script>
 </body>
 </html>
